@@ -1,0 +1,87 @@
+const actionResults = {
+  Serve: ["Error", "Ace", "Zero"],
+  Dig: ["Error", "Success"],
+  Set: ["Error", "Assist", "Zero"],
+  Attack: ["Error", "Kill", "Zero"],
+  Block: ["Error", "Kill", "Zero"],
+};
+
+const StatButtons = ({ players, onLog }) => {
+  const [selectedAction, setSelectedAction] = useState(null);
+  const [selectedResult, setSelectedResult] = useState(null);
+  const [assistPlayer, setAssistPlayer] = useState(null);
+
+  return (
+    <div>
+      <h3>Log Stats</h3>
+
+      {!selectedAction ? (
+        <div>
+          <h4>Select Primary Action</h4>
+          {Object.keys(actionResults).map((action) => (
+            <button key={action} onClick={() => setSelectedAction(action)}>
+              {action}
+            </button>
+          ))}
+        </div>
+      ) : !selectedResult ? (
+        <div>
+          <h4>Result for {selectedAction}</h4>
+          {/* Ensure actionResults[selectedAction] exists */}
+          {actionResults[selectedAction] ? (
+            actionResults[selectedAction].map((result) => (
+              <button
+                key={result}
+                onClick={() => {
+                  if (selectedAction === "Set" && result === "Assist") {
+                    setSelectedResult(result);
+                  } else {
+                    onLog(selectedAction, result);
+                    setSelectedAction(null);
+                  }
+                }}
+              >
+                {result}
+              </button>
+            ))
+          ) : (
+            <p>No valid results for this action</p>
+          )}
+          <button onClick={() => setSelectedAction(null)}>Cancel</button>
+        </div>
+      ) : !assistPlayer ? (
+        <div>
+          <h4>Who Got the Kill?</h4>
+          {players.length > 0 ? (
+            players.map((player) => (
+              <button key={player.id} onClick={() => setAssistPlayer(player.name)}>
+                {player.name}
+              </button>
+            ))
+          ) : (
+            <p>No players available</p>
+          )}
+          <button onClick={() => setSelectedResult(null)}>Back</button>
+        </div>
+      ) : (
+        <div>
+          <h4>Logging Assist & Kill</h4>
+          <p>Assist: {selectedAction} → {selectedResult}</p>
+          <p>Kill: {assistPlayer} → Attack → Kill</p>
+          <button
+            onClick={() => {
+              onLog("Set", "Assist");
+              onLog("Attack", "Kill", assistPlayer);
+              setSelectedAction(null);
+              setSelectedResult(null);
+              setAssistPlayer(null);
+            }}
+          >
+            Confirm
+          </button>
+          <button onClick={() => setAssistPlayer(null)}>Back</button>
+        </div>
+      )}
+    </div>
+  );
+};

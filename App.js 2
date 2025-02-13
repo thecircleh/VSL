@@ -1,0 +1,189 @@
+import React, { useState, useEffect } from 'react';
+import CourtView from './components/CourtView';
+import PlayerManager from './components/PlayerManager';
+import PlayerSelector from './components/PlayerSelector';
+import StatButtons from './components/StatButtons';
+import StatPreview from './components/StatPreview';
+import MatchLog from './components/MatchLog';
+
+const primaryActions = [
+  { name: "Serve", icon: "🏐" },
+  { name: "Dig", icon: "✋" },
+  { name: "Set", icon: "🔧" },
+  { name: "Attack", icon: "⬆️" },
+  { name: "Block", icon: "🛑" }
+];
+
+const actionResults = {
+  Serve: ["Error", "Ace", "Zero"],
+  Dig: ["Error", "Success"],
+  Set: ["Error", "Assist", "Zero"],
+  Attack: ["Error", "Kill", "Zero"],
+  Block: ["Error", "Kill", "Zero"]
+};
+
+function App() {
+  const [players, setPlayers] = useState([
+    { id: 1, name: "Player 1", active: false },
+    { id: 2, name: "Player 2", active: false },
+    { id: 3, name: "Player 3", active: false },
+    { id: 4, name: "Player 4", active: false },
+    { id: 5, name: "Player 5", active: false },
+    { id: 6, name: "Player 6", active: false },
+    { id: 7, name: "Player 7", active: false }
+  ]);
+
+  const [activePlayers, setActivePlayers] = useState([]);
+  const [courtLocked, setCourtLocked] = useState(false);
+  const [logs, setLogs] = useState([]);  // ✅ Only one declaration
+  const [ballPosition, setBallPosition] = useState(null);
+  const [touches, setTouches] = useState([]);
+  const [lastTouchedPlayer, setLastTouchedPlayer] = useState(null);
+  const [lastTouchIndex, setLastTouchIndex] = useState(null);
+
+  const [teamName, setTeamName] = useState("My Team");
+  const [opponentName, setOpponentName] = useState("Opponent");
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [currentSet, setCurrentSet] = useState(1);
+  const [savedTeams, setSavedTeams] = useState({});
+
+  useEffect(() => {
+    setActivePlayers(players.filter(p => p.active).slice(0, 6));
+  }, [players]);
+
+  useEffect(() => {
+    const storedTeams = JSON.parse(localStorage.getItem("savedTeams"));
+    if (storedTeams) {
+      setSavedTeams(storedTeams);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Object.keys(savedTeams).length > 0) {
+      localStorage.setItem("savedTeams", JSON.stringify(savedTeams));
+    }
+  }, [savedTeams]);
+
+  const handleTeamNameChange = (e) => {
+    const newTeamName = e.target.value;
+    setTeamName(newTeamName);
+    if (savedTeams[newTeamName]) {
+      setPlayers(savedTeams[newTeamName]);
+    } else {
+      setPlayers([]);
+    }
+  };
+
+  const saveTeam = () => {
+    if (teamName.trim() === "" || activePlayers.length === 0) {
+      alert("Enter a valid team name and have at least 6 active players before saving.");
+      return;
+    }
+    const updatedTeams = { ...savedTeams, [teamName]: activePlayers };
+    setSavedTeams(updatedTeams);
+    localStorage.setItem("savedTeams", JSON.stringify(updatedTeams));
+  };
+
+  const rotatePlayers = () => {
+    setActivePlayers(prev => {
+      if (prev.length === 6) {
+        return [
+          prev[3], // Position 5 → Position 4
+          prev[0], // Position 6 → Position 5
+          prev[1], // Position 1 → Position 6 (New Server)
+          prev[4], // Position 2 → Position 1
+          prev[5], // Position 3 → Position 2
+          prev[2], // Position 4 → Position 3
+        ];
+      }
+      return prev;
+    });
+  };
+
+  const toggleCourtLock = () => {
+    setCourtLocked(prev => !prev);
+    if (!courtLocked) {
+      setBallPosition({ top: "50%", left: "50%" });
+      setTouches([]);
+      setLastTouchedPlayer(null);
+      setLastTouchIndex(null);
+    }
+  };
+
+  const logStat = (playerName, action) => {
+    setLogs(prevLogs => [
+      ...prevLogs,
+      { player: playerName, action, timestamp: new Date().toLocaleTimeString() }
+    ]);
+  };
+
+  const handleBallMove = (newPosition) => {
+    setBallPosition(newPosition);
+  };
+
+  const handleBallTouch = (player, index) => {
+    if (courtLocked && !touches.includes(player.name)) {
+      setTouches(prev => [...prev, player.name]);
+      setLastTouchedPlayer(player);
+      setLastTouchIndex(index);
+  const handlePlayerTouch = (player, index) => {
+    if (courtLocked && !touches.includes(player.name)) {
+      setTouches(prev => [...prev, player.name]);
+      setLastTouchedPlayer(player);
+      setLastTouchIndex(index);
+      let action = "";
+      if (touches.length === 0) action = "Dig";
+      else if (touches.length === 1) action = "Set";
+      else if (touches.length === 2) action = "Attack";
+
+      if (action) {
+        logStat(player.name, action);
+      }
+
+      if (touches.length >= 2) setTouches([]); // Reset after attack
+    }
+  };
+
+  const handleLogStat = (action, result, player = null) => {
+    if (!selectedPlayer) return;
+    const playerName = player || players.find(p => p.id === parseInt(selectedPlayer))?.name || "Unknown";
+    setLogs(prevLogs => [...prevLogs, { set: currentSet, player: playerName, action, result }]);
+  };
+
+  return (
+    <div>
+      <h1>Volleyball Stat Logger</h1>
+      <div>
+        <label>Team Name: </label>
+        <input type="text" value={teamName} onChange={handleTeamNameChange} list="team-suggestions" />
+        <datalist id="team-suggestions">
+          {Object.keys(savedTeams).map((team, index) => (
+            <option key={index} value={team} />
+          ))}
+        </datalist>
+        <button onClick={saveTeam}>Save Team</button>
+        <label>Opponent: </label>
+        <input type="text" value={opponentName} onChange={(e) => setOpponentName(e.target.value)} />
+      </div>
+
+      <CourtView 
+        activePlayers={activePlayers} 
+        setActivePlayers={setActivePlayers} 
+        rotatePlayers={rotatePlayers} 
+		onPlayerTouch={handlePlayerTouch}
+      />
+
+      <PlayerManager players={players} setPlayers={setPlayers} />
+      <PlayerSelector players={activePlayers} onSelect={setSelectedPlayer} />
+      <StatButtons primaryActions={primaryActions} actionResults={actionResults} players={activePlayers} onLog={handleLogStat} />
+      <StatPreview logs={logs} teamName={teamName} opponentName={opponentName} currentSet={currentSet} setCurrentSet={setCurrentSet} />
+      <MatchLog logs={logs} />
+
+      <button onClick={toggleCourtLock}>
+        {courtLocked ? "Unlock Court" : "Lock Court"}
+      </button>
+    </div>
+  );
+}
+
+export default App;

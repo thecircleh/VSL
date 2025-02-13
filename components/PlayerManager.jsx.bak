@@ -1,0 +1,96 @@
+import React, { useState } from 'react';
+
+const PlayerManager = ({ players, setPlayers }) => {
+  const [newPlayerName, setNewPlayerName] = useState("");
+  const [selectedSubOut, setSelectedSubOut] = useState("");
+
+  const toggleActiveStatus = (playerId) => {
+  setPlayers(prev =>
+    prev.map(p =>
+      p.id === playerId ? { ...p, active: !p.active } : p
+    )
+  );
+  setTimeout(updateActivePlayers, 50); // ✅ Ensure update happens after state change
+};
+
+
+    if (player.active) {
+      // If player is active, deactivate them
+      setPlayers(prevPlayers => prevPlayers.map(p => p.id === playerId ? { ...p, active: false } : p));
+    } else {
+      if (activeCount < 6) {
+        // If less than 6 players are active, just activate the player
+        setPlayers(prevPlayers => prevPlayers.map(p => p.id === playerId ? { ...p, active: true } : p));
+      } else {
+        // More than 6 players? Ask who to sub out
+        const subOut = window.prompt(
+          `You already have 6 active players. Who should be subbed out?\n${players
+            .filter(p => p.active)
+            .map(p => `- ${p.name}`)
+            .join("\n")}`
+        );
+
+        if (subOut) {
+          const subOutPlayer = players.find(p => p.name === subOut.trim());
+          if (subOutPlayer) {
+            setPlayers(prevPlayers =>
+              prevPlayers.map(p =>
+                p.id === subOutPlayer.id ? { ...p, active: false } :
+                p.id === playerId ? { ...p, active: true } : p
+              )
+            );
+          } else {
+            alert("Invalid player name. No changes made.");
+          }
+        }
+      }
+    }
+  };
+
+  return (
+    <div>
+      <h3>Manage Players</h3>
+      <ul>
+        {players.map((player) => (
+          <li key={player.id}>
+            <input
+              type="text"
+              value={player.name}
+              onChange={(e) => setPlayers(prev => prev.map(p => p.id === player.id ? { ...p, name: e.target.value } : p))}
+            />
+            <button onClick={() => toggleActiveStatus(player.id)}>
+              {player.active ? "Deactivate" : "Activate"}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div>
+        <h4>Add New Player</h4>
+        <input
+          type="text"
+          placeholder="Enter player name"
+          value={newPlayerName}
+          onChange={(e) => setNewPlayerName(e.target.value)}
+        />
+        <button onClick={() => {
+          if (newPlayerName.trim()) {
+            setPlayers(prevPlayers => [
+              ...prevPlayers,
+              { id: prevPlayers.length + 1, name: newPlayerName, active: false }
+            ]);
+            setNewPlayerName("");
+          }
+        }}>
+          Add Player
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default PlayerManager;
+
+
+
+
