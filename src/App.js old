@@ -1,0 +1,43 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import PlayerSelector from './components/PlayerSelector';
+import StatButtons from './components/StatButtons';
+import MatchLog from './components/MatchLog';
+
+const players = [
+  { id: 1, name: "Player 1" },
+  { id: 2, name: "Player 2" },
+  { id: 3, name: "Player 3" }
+];
+
+function App() {
+  const [selectedPlayer, setSelectedPlayer] = useState(players[0].id);
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/logs').then((response) => {
+      setLogs(response.data);
+    });
+  }, []);
+
+  const handleLogStat = (action) => {
+    const playerName = players.find(p => p.id === parseInt(selectedPlayer)).name;
+    const logEntry = { player: playerName, action };
+
+    axios.post('http://localhost:5000/log', logEntry)
+      .then(() => {
+        setLogs([...logs, logEntry]);
+      });
+  };
+
+  return (
+    <div>
+      <h1>Volleyball Stat Logger</h1>
+      <PlayerSelector players={players} onSelect={setSelectedPlayer} />
+      <StatButtons onLog={handleLogStat} />
+      <MatchLog logs={logs} />
+    </div>
+  );
+}
+
+export default App;

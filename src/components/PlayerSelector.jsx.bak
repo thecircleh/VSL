@@ -1,0 +1,40 @@
+import React from 'react';
+
+const PlayerSelector = ({ players, onSelect, multiSelect = false }) => {
+  return (
+    <div>
+      <h3>Select Player{multiSelect ? "s" : ""}</h3>
+      
+      {multiSelect ? (
+        <div>
+          <label>Setter:</label>
+          <select onChange={(e) => onSelect("setter", e.target.value)}>
+            <option value="">-- Select Setter --</option>
+            {players.map((player) => (
+              <option key={player.id} value={player.id}>{player.name}</option>
+            ))}
+          </select>
+
+          <label>Attacker:</label>
+          <select onChange={(e) => onSelect("attacker", e.target.value)}>
+            <option value="">-- Select Attacker --</option>
+            {players.map((player) => (
+              <option key={player.id} value={player.id}>{player.name}</option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <select onChange={(e) => onSelect(e.target.value)}>
+          <option value="">-- Select Player --</option>
+          {players.map((player) => (
+            <option key={player.id} value={player.id}>{player.name}</option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+};
+
+export default PlayerSelector;
+
+

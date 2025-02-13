@@ -1,0 +1,22 @@
+import React from 'react';
+
+const PlayerSelector = ({ players, onSelect }) => {
+  return (
+    <div>
+      <h3>Select Player</h3>
+      <select onChange={(e) => onSelect(e.target.value)}>
+        {players.length > 0 ? (
+          players.map((player) => (
+            <option key={player.id} value={player.id}>
+              {player.name}
+            </option>
+          ))
+        ) : (
+          <option disabled>No players available</option>
+        )}
+      </select>
+    </div>
+  );
+};
+
+export default PlayerSelector;

@@ -1,0 +1,104 @@
+import React from "react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import "./CourtView.css";
+
+const CourtView = ({ activePlayers, setActivePlayers, rotatePlayers, logStat, ballPosition, onBallMove, onPlayerTouch, courtLocked }) => {
+  const handleDropInErrorZone = () => {
+    if (!courtLocked) return;
+
+    let actionError = "";
+    if (onPlayerTouch.lastTouchIndex === 0) actionError = "Dig Error";
+    else if (onPlayerTouch.lastTouchIndex === 1) actionError = "Set Error";
+    else if (onPlayerTouch.lastTouchIndex === 2) actionError = "Attack Error";
+
+    if (onPlayerTouch.lastTouchedPlayer && actionError) {
+      logStat(onPlayerTouch.lastTouchedPlayer.name, actionError);
+    }
+  };
+
+  return (
+    <div className="court-container">
+      <h3>Volleyball Court</h3>
+      <DragDropContext>
+        <Droppable droppableId="court" isDropDisabled={courtLocked}>
+          {(provided) => (
+            <div className="court" {...provided.droppableProps} ref={provided.innerRef}>
+              <div className="net">NET</div>
+
+              {/* Front Row (4, 3, 2) */}
+              <div className="row">
+                {["4", "3", "2"].map((pos, index) => (
+                  <div key={pos} className="court-position">
+                    {activePlayers[index] && (
+                      <Draggable key={activePlayers[index].id} draggableId={activePlayers[index].id.toString()} index={index} isDragDisabled={courtLocked}>
+                        {(provided) => (
+                          <div
+                            className="player-box"
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            onClick={() => onPlayerTouch(activePlayers[index], index)}
+                          >
+                            {activePlayers[index].name}
+                          </div>
+                        )}
+                      </Draggable>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Back Row (5, 6, 1 - Server) */}
+              <div className="row">
+                {["5", "6", "1"].map((pos, index) => (
+                  <div key={pos} className="court-position">
+                    {activePlayers[index + 3] && (
+                      <Draggable key={activePlayers[index + 3].id} draggableId={activePlayers[index + 3].id.toString()} index={index + 3} isDragDisabled={courtLocked}>
+                        {(provided) => (
+                          <div
+                            className="player-box"
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            onClick={() => onPlayerTouch(activePlayers[index + 3], index + 3)}
+                          >
+                            {activePlayers[index + 3].name}
+                          </div>
+                        )}
+                      </Draggable>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+
+      {/* Volleyball */}
+      {courtLocked && (
+        <div
+          className="volleyball"
+          style={{ top: ballPosition?.top, left: ballPosition?.left }}
+          draggable
+          onDrag={(e) => onBallMove({ top: `${e.clientY}px`, left: `${e.clientX}px` })}
+        >
+          🏐
+        </div>
+      )}
+
+      {/* Error Zone */}
+      {courtLocked && (
+        <div className="error-zone" onDrop={handleDropInErrorZone}>
+          Drag ball here for an ERROR
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CourtView;
+
+
